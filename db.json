@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Manager",
+      "email": "manager@test.com",
+      "password": "123456",
+      "role": "manager"
+    },
+    {
+      "id": 2,
+      "name": "Collaborator",
+      "email": "user@test.com",
+      "password": "123456",
+      "role": "collaborator"
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Website Redesign",
+      "description": "Corporate website redesign",
+      "status": "In Progress",
+      "assignedTo": 2,
+      "createdAt": "2025-01-15"
+    },
+    {
+      "id": 2,
+      "name": "Mobile App",
+      "description": "New customer-facing mobile application",
+      "status": "Pending",
+      "assignedTo": 2,
+      "createdAt": "2025-02-01"
+    },
+    {
+      "id": 3,
+      "name": "API Integration",
+      "description": "Integrate third-party payment API",
+      "status": "Completed",
+      "assignedTo": 1,
+      "createdAt": "2025-02-10"
+    }
+  ]
+}
