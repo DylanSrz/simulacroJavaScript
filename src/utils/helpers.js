@@ -1,9 +1,22 @@
-// Generic helper utilities.
+/**
+ * @file utils/helpers.js
+ * @description Funciones auxiliares de propósito general: fechas, escapado de
+ * HTML y mapeo de estados a clases CSS. Sin dependencias de otros módulos.
+ */
 
-/** Today's date as an ISO date string (YYYY-MM-DD). */
+/**
+ * Devuelve la fecha de hoy como string ISO de solo fecha (YYYY-MM-DD).
+ * Se usa para rellenar `createdAt` al crear un proyecto.
+ * @returns {string} Fecha actual en formato YYYY-MM-DD.
+ */
 export const todayISO = () => new Date().toISOString().split('T')[0];
 
-/** Human-friendly date formatting, falls back to the raw value. */
+/**
+ * Formatea una fecha ISO a un formato legible (p. ej. "Jan 15, 2025").
+ * Si el valor es inválido, devuelve el valor original; si falta, devuelve "—".
+ * @param {string} isoDate - Fecha en formato ISO.
+ * @returns {string} Fecha formateada para mostrar al usuario.
+ */
 export const formatDate = (isoDate) => {
   if (!isoDate) return '—';
   const date = new Date(isoDate);
@@ -15,7 +28,12 @@ export const formatDate = (isoDate) => {
   });
 };
 
-/** Escape user-provided text before injecting it into innerHTML. */
+/**
+ * Escapa texto del usuario antes de inyectarlo con innerHTML.
+ * Previene inyección de HTML/XSS al renderizar nombres, descripciones, etc.
+ * @param {*} value - Valor a escapar (se convierte a string).
+ * @returns {string} Texto con los caracteres especiales escapados.
+ */
 export const escapeHtml = (value) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -24,7 +42,11 @@ export const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
-/** Maps a project status to a CSS modifier class for its badge. */
+/**
+ * Mapea un estado de proyecto a su clase CSS de badge (color del distintivo).
+ * @param {string} status - Estado del proyecto.
+ * @returns {string} Nombre de la clase CSS modificadora del badge.
+ */
 export const statusClass = (status) =>
   ({
     Pending: 'badge--pending',
@@ -32,5 +54,8 @@ export const statusClass = (status) =>
     Completed: 'badge--completed',
   }[status] || 'badge--pending');
 
-/** Returns the route id portion of the current hash, e.g. "#/projects/edit/3". */
+/**
+ * Devuelve el hash actual de la URL, con `#/login` como valor por defecto.
+ * @returns {string} Hash de la ruta actual (p. ej. "#/projects/edit/3").
+ */
 export const getHashPath = () => location.hash || '#/login';

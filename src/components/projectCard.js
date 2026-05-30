@@ -1,12 +1,22 @@
-// Renders a single project as a card.
+/**
+ * @file components/projectCard.js
+ * @description Componente de presentación: renderiza un proyecto como tarjeta.
+ * Es una función "pura" de plantilla (devuelve HTML); los eventos de sus botones
+ * los gestiona la vista que la usa (projectsView), mediante delegación.
+ */
 import { escapeHtml, formatDate, statusClass } from '../utils/helpers.js';
 
 /**
- * @param {object} project
- * @param {object} options
- * @param {string} options.assigneeName - resolved name of the assignee
- * @param {boolean} options.canEdit
- * @param {boolean} options.canDelete
+ * Genera el HTML de la tarjeta de un proyecto.
+ *
+ * @param {object} project - Proyecto a renderizar (name, description, status,
+ *   assignedTo, createdAt, id).
+ * @param {object} [options] - Opciones de presentación.
+ * @param {string} [options.assigneeName='Unassigned'] - Nombre ya resuelto del
+ *   responsable (la vista traduce el id de usuario a su nombre).
+ * @param {boolean} [options.canEdit=false] - Si se muestra el botón Editar.
+ * @param {boolean} [options.canDelete=false] - Si se muestra el botón Eliminar.
+ * @returns {string} Cadena HTML de la tarjeta.
  */
 export const projectCard = (project, { assigneeName = 'Unassigned', canEdit = false, canDelete = false } = {}) => `
   <article class="card" data-id="${project.id}">

@@ -1,5 +1,12 @@
-// Create / edit project form.
-// Managers edit every field; collaborators may only change status of their own.
+/**
+ * @file views/projectFormView.js
+ * @description Formulario de crear / editar proyecto. Es la vista más rica en
+ * lógica de roles:
+ *   - Manager: puede crear y editar todos los campos.
+ *   - Collaborator: NO puede crear; al editar uno de SUS proyectos solo puede
+ *     cambiar el campo `status` (el resto de campos quedan bloqueados).
+ * Incluye validación avanzada (longitudes y nombres no duplicados).
+ */
 import { getSession } from '../auth/authService.js';
 import {
   getUsers,
@@ -19,7 +26,12 @@ import { showToast } from '../components/toast.js';
 import { escapeHtml, todayISO } from '../utils/helpers.js';
 
 /**
- * @param {object} params - route params, e.g. { id } when editing.
+ * Renderiza el formulario de proyecto. Funciona en dos modos según `params`:
+ * creación (sin id) o edición (con id). Aplica las restricciones de rol tanto
+ * para acceder como para decidir qué campos se pueden editar.
+ *
+ * @param {object} [params={}] - Parámetros de ruta. `{ id }` cuando se edita.
+ * @returns {Promise<void>}
  */
 export const projectFormView = async (params = {}) => {
   const container = document.getElementById('view-container');
@@ -28,6 +40,8 @@ export const projectFormView = async (params = {}) => {
   const isEdit = Boolean(params.id);
   showLoader(container, 'Loading…');
 
+  // Se cargan usuarios (para el select de responsable) y todos los proyectos
+  // (para detectar nombres duplicados). En edición, también el proyecto actual.
   let users = [];
   let project = null;
   let allProjects = [];
@@ -40,20 +54,23 @@ export const projectFormView = async (params = {}) => {
     return;
   }
 
-  // Collaborators can only edit their own project, and only its status.
+  // Guardas de rol a nivel de vista (además del authGuard del router):
+  // un collaborator solo puede editar SU proyecto.
   if (isEdit && !isManager && project.assignedTo !== session.id) {
     location.hash = '#/projects';
     return;
   }
+  // Un collaborator no puede crear proyectos.
   if (!isEdit && !isManager) {
-    // Collaborators cannot create projects.
     location.hash = '#/dashboard';
     return;
   }
 
-  // Fields locked for collaborators on edit.
+  // `locked` = true cuando un collaborator edita: todos los campos salvo el
+  // estado quedan deshabilitados.
   const locked = isEdit && !isManager;
 
+  // Opciones del select de responsable (marca como seleccionado el actual).
   const userOptions = users
     .map(
       (u) =>
@@ -61,6 +78,7 @@ export const projectFormView = async (params = {}) => {
     )
     .join('');
 
+  // Opciones del select de estado.
   const statusOptions = PROJECT_STATUSES.map(
     (s) => `<option value="${s}" ${project?.status === s ? 'selected' : ''}>${s}</option>`
   ).join('');
@@ -104,11 +122,18 @@ export const projectFormView = async (params = {}) => {
   `;
 
   const form = container.querySelector('#project-form');
+
+  /**
+   * Escribe (o limpia) el mensaje de error de un campo del formulario.
+   * @param {string} field - Nombre del campo (name, description, status…).
+   * @param {string} msg - Mensaje de error ('' para limpiar).
+   */
   const setError = (field, msg) => {
     const el = form.querySelector(`[data-error="${field}"]`);
     if (el) el.textContent = msg;
   };
 
+  // Envío del formulario: valida según el rol y crea o actualiza el proyecto.
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -118,6 +143,9 @@ export const projectFormView = async (params = {}) => {
     const assignedTo = Number(form.assignedTo.value);
 
     let hasError = false;
+
+    // Los campos de texto solo se validan cuando NO están bloqueados
+    // (es decir, manager creando o editando).
     if (!locked) {
       const nameErr =
         validateRequired(name, 'Name') ||
@@ -126,7 +154,8 @@ export const projectFormView = async (params = {}) => {
         validateRequired(description, 'Description') ||
         validateLength(description, { min: 5, max: 300, label: 'Description' });
 
-      // Advanced validation: no duplicate names (ignoring the project being edited).
+      // Validación avanzada: nombres no duplicados (ignorando el proyecto
+      // que se está editando).
       const duplicate = allProjects.some(
         (p) => p.name.toLowerCase() === name.toLowerCase() && p.id !== project?.id
       );
@@ -137,6 +166,7 @@ export const projectFormView = async (params = {}) => {
       if (nameErr || dupErr || descErr) hasError = true;
     }
 
+    // El estado siempre se valida (es lo único editable por un collaborator).
     const statusErr = validateStatus(status);
     setError('status', statusErr);
     if (statusErr) hasError = true;
@@ -149,13 +179,14 @@ export const projectFormView = async (params = {}) => {
 
     try {
       if (isEdit) {
-        // Collaborators only send status; managers send everything.
+        // Collaborator envía solo el estado (PATCH parcial); manager, todo.
         const payload = locked
           ? { status }
           : { name, description, status, assignedTo };
         await updateProject(project.id, payload);
         showToast('Project updated.', 'success');
       } else {
+        // Creación: `createdAt` se genera automáticamente con la fecha de hoy.
         await createProject({
           name,
           description,

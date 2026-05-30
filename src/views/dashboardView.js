@@ -1,10 +1,23 @@
-// Dashboard view: stats for managers, assigned list for collaborators.
+/**
+ * @file views/dashboardView.js
+ * @description Vista del dashboard. Es distinta según el rol:
+ *   - Manager: tarjetas con estadísticas agregadas de TODOS los proyectos.
+ *   - Collaborator: contador y listado de SUS proyectos asignados.
+ * Demuestra cómo el rol de la sesión decide tanto los datos que se piden a la
+ * API como la interfaz que se pinta.
+ */
 import { getSession } from '../auth/authService.js';
 import { getProjects, getProjectsByUser } from '../api/api.js';
 import { showLoader } from '../components/loader.js';
 import { showToast } from '../components/toast.js';
 import { escapeHtml, statusClass } from '../utils/helpers.js';
 
+/**
+ * Construye el HTML del dashboard de manager: cuenta los proyectos por estado
+ * y los muestra como tarjetas de estadísticas.
+ * @param {Array<object>} projects - Todos los proyectos.
+ * @returns {string} HTML del dashboard de manager.
+ */
 const managerDashboard = (projects) => {
   const total = projects.length;
   const inProgress = projects.filter((p) => p.status === 'In Progress').length;
@@ -23,6 +36,12 @@ const managerDashboard = (projects) => {
   `;
 };
 
+/**
+ * Construye el HTML del dashboard de collaborator: un contador de sus proyectos
+ * y la lista de los mismos con su estado.
+ * @param {Array<object>} projects - Proyectos asignados al usuario.
+ * @returns {string} HTML del dashboard de collaborator.
+ */
 const collaboratorDashboard = (projects) => {
   const rows = projects
     .map(
@@ -48,12 +67,19 @@ const collaboratorDashboard = (projects) => {
   `;
 };
 
+/**
+ * Renderiza el dashboard correspondiente al rol del usuario en sesión.
+ * Muestra un loader mientras pide los datos y un mensaje de error si la API
+ * (json-server) no responde.
+ * @returns {Promise<void>}
+ */
 export const dashboardView = async () => {
   const container = document.getElementById('view-container');
   const session = getSession();
   showLoader(container, 'Loading dashboard…');
 
   try {
+    // Manager → todos los proyectos; Collaborator → solo los suyos.
     const projects =
       session.role === 'manager'
         ? await getProjects()
