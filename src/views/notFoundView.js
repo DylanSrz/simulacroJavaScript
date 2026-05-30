@@ -1,4 +1,13 @@
-// 404 view.
+/**
+ * @file views/notFoundView.js
+ * @description Vista 404. Se muestra cuando el hash no coincide con ninguna
+ * ruta conocida. Ofrece un enlace de vuelta al dashboard.
+ */
+
+/**
+ * Renderiza la pantalla de "página no encontrada" en #view-container.
+ * @returns {void}
+ */
 export const notFoundView = () => {
   const container = document.getElementById('view-container');
   container.innerHTML = `

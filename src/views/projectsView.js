@@ -1,4 +1,10 @@
-// Projects listing view with search + status filters.
+/**
+ * @file views/projectsView.js
+ * @description Vista de listado de proyectos. Carga los proyectos (todos para
+ * manager, solo los asignados para collaborator), los pinta como tarjetas y
+ * ofrece búsqueda por nombre y filtro por estado en el cliente (puntos extra).
+ * También gestiona la navegación a editar y el borrado con modal de confirmación.
+ */
 import { getSession } from '../auth/authService.js';
 import {
   getProjects,
@@ -12,12 +18,19 @@ import { showLoader } from '../components/loader.js';
 import { showToast } from '../components/toast.js';
 import { PROJECT_STATUSES } from '../utils/validators.js';
 
+/**
+ * Renderiza el listado de proyectos y engancha búsqueda, filtros y acciones.
+ * El rol del usuario determina qué proyectos se cargan y qué botones se ven.
+ * @returns {Promise<void>}
+ */
 export const projectsView = async () => {
   const container = document.getElementById('view-container');
   const session = getSession();
   const isManager = session.role === 'manager';
   showLoader(container, 'Loading projects…');
 
+  // Se cargan proyectos y usuarios en paralelo (los usuarios sirven para
+  // mostrar el nombre del responsable en cada tarjeta).
   let projects = [];
   let users = [];
   try {
@@ -31,11 +44,17 @@ export const projectsView = async () => {
     return;
   }
 
+  /**
+   * Traduce un id de usuario a su nombre legible.
+   * @param {number} id - ID del usuario responsable.
+   * @returns {string} Nombre del usuario, o 'Unassigned' si no se encuentra.
+   */
   const userName = (id) => users.find((u) => u.id === id)?.name || 'Unassigned';
 
-  // Client-side filter state (extra features: search + status filter).
+  // Estado de los filtros del lado cliente (búsqueda + estado).
   const state = { search: '', status: 'All' };
 
+  // Opciones del select de filtro: "All" + los estados válidos.
   const filterOptions = ['All', ...PROJECT_STATUSES]
     .map((s) => `<option value="${s}">${s}</option>`)
     .join('');
@@ -56,6 +75,11 @@ export const projectsView = async () => {
 
   const grid = container.querySelector('[data-role="grid"]');
 
+  /**
+   * Aplica los filtros actuales (búsqueda + estado) y repinta solo la rejilla
+   * de tarjetas. Decide por rol qué botones de acción mostrar en cada tarjeta.
+   * @returns {void}
+   */
   const renderGrid = () => {
     const filtered = projects.filter((p) => {
       const matchesSearch = p.name.toLowerCase().includes(state.search.toLowerCase());
@@ -72,7 +96,7 @@ export const projectsView = async () => {
       .map((p) =>
         projectCard(p, {
           assigneeName: userName(p.assignedTo),
-          // Managers can edit all; collaborators can edit (status only) their own.
+          // Manager edita todos; collaborator edita (solo el estado) los suyos.
           canEdit: isManager || p.assignedTo === session.id,
           canDelete: isManager,
         })
@@ -82,16 +106,20 @@ export const projectsView = async () => {
 
   renderGrid();
 
+  // Buscador: filtra por nombre conforme se escribe.
   container.querySelector('[data-role="search"]').addEventListener('input', (e) => {
     state.search = e.target.value;
     renderGrid();
   });
 
+  // Filtro de estado.
   container.querySelector('[data-role="status"]').addEventListener('change', (e) => {
     state.status = e.target.value;
     renderGrid();
   });
 
+  // Delegación de eventos: un único listener en la rejilla maneja los botones
+  // Editar/Eliminar de todas las tarjetas.
   grid.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
@@ -104,6 +132,7 @@ export const projectsView = async () => {
 
     if (btn.dataset.action === 'delete') {
       const project = projects.find((p) => p.id === id);
+      // Confirmación previa antes de una acción destructiva.
       const ok = await confirmModal({
         title: 'Delete project',
         message: `Delete "${project?.name}"? This cannot be undone.`,
@@ -114,6 +143,7 @@ export const projectsView = async () => {
 
       try {
         await deleteProject(id);
+        // Actualiza el estado local y repinta sin recargar la página.
         projects = projects.filter((p) => p.id !== id);
         renderGrid();
         showToast('Project deleted.', 'success');
