@@ -1,5 +1,5 @@
 export function viewLogin() {
-    document.querySelector('#app').innerHTML = `
+    document.getElementById("app").innerHTML = `
     <form>
         <div class="mb-3">
             <label for="exampleInputEmail1" class="form-label">Email address</label>

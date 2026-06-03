@@ -44,8 +44,8 @@ document.querySelector('#app').innerHTML = `
 </nav>
 <h1>ESTAS EN MAIN</h1>
 <form class="d-flex" role="search">
-        <button class="btn btn-outline-success" type="submit">Login</button>
-      </form>
+  <button class="btn btn-outline-success" type="submit">Login</button>
+</form>
 
 `
 

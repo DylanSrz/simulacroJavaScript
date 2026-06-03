@@ -1,4 +1,4 @@
-import { viewLogin } from "./view/login.js";
+import { viewLogin } from "./views/login.js";
 
 const routes = {
     'login' :{ view: viewLogin, role: null },    
@@ -11,9 +11,13 @@ function navigateTo(url) {
 
 function render(){
     const path = location.pathname
-    document.getElementById("app").innerHTML = routes[path] || "<h1>404</h1><p>Pagina no enncontrada</p>"
+    const route = routes[path]
+    document.getElementById("app").innerHTML = route
 }
 
 export const initRouter = () => {
-    window.addEventListener()
+    window.addEventListener("popstate", render);    
+    window.addEventListener('load', render);
+    if (document.readyState === 'complete') render();
 }
+
