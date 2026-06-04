@@ -1,23 +1,32 @@
 import { viewLogin } from "./views/login.js";
+import { viewDashboard } from "./views/dashboard.js";
+import { viewNotFound } from "./views/notFound.js";
+import { viewHome } from "./views/home.js";
 
 const routes = {
-    'login' :{ view: viewLogin, role: null },    
-}
+    '/'     : viewHome,
+    '/login': viewLogin,
+    '/dashboard': viewDashboard
+};
 
-function navigateTo(url) {
-    history.pushState(null, null, url)
-    render()
-}
+const render = () => {
+    const path = window.location.pathname;
 
-function render(){
-    const path = location.pathname
-    const route = routes[path]
-    document.getElementById("app").innerHTML = route
-}
+    const view = routes[path];
+
+    if (!view) {
+        document.querySelector('#app').innerHTML = viewNotFound();
+        return;
+    }
+    view();
+};
+
+export const navigateTo = (path) => {
+    history.pushState({}, '', path);
+    render();
+};
 
 export const initRouter = () => {
-    window.addEventListener("popstate", render);    
-    window.addEventListener('load', render);
-    if (document.readyState === 'complete') render();
-}
-
+    window.addEventListener('popstate', render);
+    render();
+};
